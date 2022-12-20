@@ -1,0 +1,1 @@
+web gunicorn Planeamento.wsgi:application --log-file -
