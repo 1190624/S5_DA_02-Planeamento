@@ -313,9 +313,9 @@ camiaoTrajetoData('Tec2311',17,15,53,18,0).
 camiaoTrajetoData('Tec2311',17,16,67,25,0).
 
 %entregaData(?ID, ?Data, ?Massa, ?ArmazemID, ?TempoColoc, ?TempoRet)
-entregaData(4439, 20221205, 200, 1, 8, 10).
-entregaData(4438, 20221205, 150, 9, 7, 9).
-entregaData(4445, 20221205, 100, 3, 5, 7).
-entregaData(4443, 20221205, 120, 8, 6, 8).
-entregaData(4449, 20221205, 300, 11, 15, 20).
-entregaData(4450, 20211205, 150, 17, 7, 10).
+entregaData(443910, 20221205, 200, 1, 8, 10).
+entregaData(443811, 20221205, 150, 9, 7, 9).
+entregaData(444512, 20221205, 100, 3, 5, 7).
+entregaData(444313, 20221205, 120, 8, 6, 8).
+entregaData(444914, 20221205, 300, 11, 15, 20).
+entregaData(445015, 20211205, 150, 17, 7, 10).
