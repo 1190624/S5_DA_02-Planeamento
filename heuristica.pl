@@ -224,10 +224,11 @@ entrega(4449, 20221205, 501, 13, 15, 20).
 
 
 /*metodos auxiliares*/
-resultadosDasDistancias(Camiao, Data, Final):- 
+resultadosDasDistancias(Data, Final):- 
 findall(Armazem, 
-(entregaData(_,Data,_, Armazem,_,_),camiaoData(Camiao,_,_,_,_,_), Armazem \== 5),
-ListaArmazens), bestfsDistancia(ListaArmazens, Final).
+(entregaData(_,Data,_, Armazem,_,_), Armazem \== 5),
+ListaArmazens), 
+bestfsDistancia(ListaArmazens, ListaId), convertIdParaNome(ListaId, Final).
 
 
 

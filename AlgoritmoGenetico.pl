@@ -12,7 +12,8 @@ initAlgGen(NumGens, DimPop, Valor1, Valor2, TempoIdeal, TempoExec, NumGensPrev, 
 	(retract(dataEntrega(_)), !; true), asserta(dataEntrega(DataEntrega)),
 	get_time(InitTempoExec),
 	(retract(initTempoExec(_)), !; true), asserta(initTempoExec(InitTempoExec)),
-	findall(ArmazemID, entregaData(_, _, _, ArmazemID, _, _), ListaTemp),
+	dataEntrega(Data),
+	findall(ArmazemID, entregaData(_, Data, _, ArmazemID, _, _), ListaTemp),
 	armazemPrincipalID(ArmazemID),
 	removeElemLista(ArmazemID, ListaTemp, ListaArmazens),
 	length(ListaArmazens, NumElem),
@@ -151,7 +152,7 @@ geraGeracao(N,G,Pop,PrevGens):-
 	N >= NumGensPrev,
 	!,
 	retira(1,PrevGens, _, ListaTemp),
-	append(NovaGenOrd, ListaTemp, NovaPrevLista),
+	append(ListaTemp, NovaGenOrd, NovaPrevLista),
 	N1 is N+1,
 	write('Geracao '), write(N), write(':'), nl, write(Pop), nl,
 	geraGeracao(N1,G,NovaGenOrd, NovaPrevLista).
@@ -174,9 +175,10 @@ geraGeracao(N,G,Pop,PrevGens):-
 	ordenaPopulacao(NovaGen, NovaGenOrd),
 	N < NumGensPrev,
 	!,
+	append(PrevGens, NovaGenOrd, NovaPrevGens),
 	N1 is N+1,
 	write('Geracao '), write(N), write(':'), nl, write(Pop), nl,
-	geraGeracao(N1,G,NovaGenOrd, PrevGens).
+	geraGeracao(N1,G,NovaGenOrd, NovaPrevGens).
 
 geraGeracao(N,_,Pop,PrevGens):-
 	!,
