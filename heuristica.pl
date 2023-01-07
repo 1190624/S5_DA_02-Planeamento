@@ -1,35 +1,3 @@
- % Bibliotecas HTTP
-:- use_module(library(http/thread_httpd)).
-:- use_module(library(http/http_dispatch)).
-:- use_module(library(http/http_parameters)).
-:- use_module(library(http/http_client)).
-:- use_module(library(http/http_open)).
-:- use_module(library(http/http_cors)).
-
-
-
-
-% Bibliotecas JSON
-:- use_module(library(http/json_convert)).
-:- use_module(library(http/http_json)).
-:- use_module(library(http/json)).
-
-
-
-
-%Servidor
-
-startServer(Port) :-
-    http_server(http_dispatch, [port(Port)]),
-    asserta(port(Port)).
-
-
-
-stopServer:-
-    retract(port(Port)),
-    http_stop_server(Port,_).
-
-
 
 %armazemPrincipalID(5).
 %idArmazem(<local>,<codigo>)
@@ -46,10 +14,10 @@ idArmazem('Santa Maria da Feira',10).
 idArmazem('Santo Tirso',11).
 idArmazem('Sao Joao da Madeira',12).
 idArmazem('Trofa',13).
-idArmazem('Vale de Cambra',14).
-idArmazem('Valongo',15).
-idArmazem('Vila do Conde',16).
-idArmazem('Vila Nova de Gaia',17).
+
+/*%camiaoData(?Nome, ?Tara, ?CapCarga, ?CapBateria, ?Autonomia, ?TpsRecarregamento)
+camiaoData('Tec2311',7500,4300,80,100,60).*/
+
 
 
 
@@ -252,20 +220,34 @@ entrega(4449, 20221205, 410, 10, 15, 20).
 entrega(4449, 20221205, 20, 11, 15, 20).
 entrega(4449, 20221205, 500, 12, 15, 20).
 entrega(4449, 20221205, 501, 13, 15, 20).
-entrega(4449, 20221205, 600, 14, 15, 20).
+%entrega(4449, 20221205, 600, 14, 15, 20).
+
+
+/*metodos auxiliares*/
+resultadosDasDistancias(Camiao, Data, Final):- 
+findall(Armazem, 
+(entregaData(_,Data,_, Armazem,_,_),camiaoData(Camiao,_,_,_,_,_), Armazem \== 5),
+ListaArmazens), bestfsDistancia(ListaArmazens, Final).
 
 
 
-:- http_handler('/lapr5', responde_ola, []).
 
 
+convertIdParaNome(ListaId, ListaNome):- converter(ListaId, [], ListaNome).
 
+converter([],Lista, ListaNome):- !,reverse(Lista, ListaNome).
 
-responde_ola(_Request) :-
-        format('Content-type: text/plain~n~n'),
-        format('OlÃ¡ LAPR5!~n').
+converter(ListId, Lista, ListaNome):-
+    ListId = [First|Res],
+    idArmazem(Nome, First), converter(Res, [Nome|Lista], ListaNome).
 
+retornarEntregas(ListaArmazens, Data, ListaEntregas):-
+ListaArmazens =[Armazem |_],
+findall(Entrega, 
+(entregaData(Entrega,Data,_, Armazem,_,_)),
+ListaEntregas).
 
+/*----------------------------------------------------------------------------*/
 
 %HeuristcaMenorDistancia
 bestfsDistancia(ListaArmazens, Final):- ArmazemAtual is 5,
@@ -299,7 +281,7 @@ bestfs2([],_,Cam, CaminhoFinal):- !,
 
 bestfs2(ListaArmazens, Data, Cam, CaminhoFinal):-
     findall((Massa,[Armazem| Cam]), 
-    (member(Armazem, ListaArmazens), entrega(_,Data,Massa,Armazem,_,_), idArmazem(_,Armazem)),
+    (member(Armazem, ListaArmazens), entregaData(_,Data,Massa,Armazem,_,_), idArmazem(_,Armazem)),
     Novos),
 
 
@@ -325,7 +307,7 @@ bestfs3([],_,Cam, CaminhoFinal):- !,
 bestfs3(ListaArmazens, Data, Cam, CaminhoFinal):-
     Cam = [ArmazemAtual|_],
     findall((Relacao,[ArmazemProximo| Cam]), 
-    (distancia(ArmazemAtual,ArmazemProximo,Distancia), member(ArmazemProximo, ListaArmazens), entrega(_,Data,Massa,ArmazemProximo,_,_), idArmazem(_,ArmazemProximo), Relacao is Massa/Distancia),
+    (distancia(ArmazemAtual,ArmazemProximo,Distancia), member(ArmazemProximo, ListaArmazens), entregaData(_,Data,Massa,ArmazemProximo,_,_), idArmazem(_,ArmazemProximo), Relacao is Massa/Distancia),
     Novos),
 
 
@@ -336,6 +318,9 @@ bestfs3(ListaArmazens, Data, Cam, CaminhoFinal):-
     bestfs3(ArmazensRestantes, Data, [Atual|Cam], CaminhoFinal).
 
 
+
+
+/*
 %TempoHeuristcaMenorDistancia
 tempoBestfsDistancia(ListaArmazens, Tempo):-
     get_time(Ti),
@@ -356,4 +341,4 @@ tempoBestfsMassaDistancia(ListaArmazens, Data, Tempo):-
     bestfsMassaDistancia(ListaArmazens, Data, Final),
     get_time(Tf),
         Tempo is Tf-Ti.
-
+		*/

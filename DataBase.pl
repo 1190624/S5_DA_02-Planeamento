@@ -12,10 +12,6 @@ armazemData('Santa Maria da Feira',10).
 armazemData('Santo Tirso',11).
 armazemData('Sao Joao da Madeira',12).
 armazemData('Trofa',13).
-armazemData('Vale de Cambra',14).
-armazemData('Valongo',15).
-armazemData('Vila do Conde',16).
-armazemData('Vila Nova de Gaia',17).
 
 armazemPrincipalID(5).
 
@@ -314,8 +310,15 @@ camiaoTrajetoData('Tec2311',17,16,67,25,0).
 
 %entregaData(?ID, ?Data, ?Massa, ?ArmazemID, ?TempoColoc, ?TempoRet)
 entregaData(443910, 20221205, 200, 1, 8, 10).
-entregaData(443811, 20221205, 150, 9, 7, 9).
-entregaData(444512, 20221205, 100, 3, 5, 7).
-entregaData(444313, 20221205, 120, 8, 6, 8).
-entregaData(444914, 20221205, 300, 11, 15, 20).
-entregaData(445015, 20211205, 150, 17, 7, 10).
+entregaData(443811, 20221205, 100, 2, 8, 10).
+entregaData(444512, 20221205, 401, 3, 8, 10).
+entregaData(444313, 20221205, 500, 4, 8, 10).
+entregaData(444914, 20221205, 110, 5, 8, 10).
+entregaData(445015, 20221205, 150, 6, 8, 10).
+entregaData(443911, 20221205, 300, 7, 7, 9).
+entregaData(443812, 20221205, 299, 8, 5, 7).
+entregaData(444513, 20221205, 120, 9, 6, 8).
+entregaData(444314, 20221205, 410, 10, 15, 20).
+entregaData(444915, 20221205, 20, 11, 15, 20).
+entregaData(445016, 20221205, 500, 12, 15, 20).
+entregaData(443912, 20221205, 501, 13, 15, 20).
