@@ -1,6 +1,6 @@
 numGeracoes(5).
 
-dimensaoPop(10).
+dimensaoPop(4).
 
 probCruzamento(0.8).
 
@@ -20,35 +20,64 @@ configAlgGen(NumGera, DimPop, ValorCruzamento, ValorMutacao, TempoMaxExec, NumGe
 	(retract(tempoMaxExec(_)), !; true), asserta(tempoMaxExec(TempoMaxExec)),
 	(retract(numGeracoesPrev(_)), !; true), asserta(numGeracoesPrev(NumGeraPrev)).
 
-initAlgGen(ListaNomeCamioes, DataEntrega, TempoRotaIdeal):-
-	calcMassaTotTransportar(DataEntrega, MassaTotTransportar),
-	calcCapTotCamioes(ListaNomeCamioes, CapTotCamioes),
-	MassaTotTransportar =< CapTotCamioes,
+initAlgGenDef(NomeCamiao, ListaEntregas, TempoRotaIdeal):-
+	recupDataEntrega(ListaEntregas, DataEntrega),
+	calcMassaTotTransportar(ListaEntregas, MassaTotTransportar),
+	calcCapTotCamioes([NomeCamiao], CapTotCamiao),
+	MassaTotTransportar =< CapTotCamiao,
 	!,
 	(retract(tempoRotaIdeal(_)), !; true), asserta(tempoRotaIdeal(TempoRotaIdeal)),
 	(retract(dataEntrega(_)), !; true), asserta(dataEntrega(DataEntrega)),
 	get_time(InicioExec),
 	(retract(inicioExecucao(_)), !; true), asserta(inicioExecucao(InicioExec)),
-	findall(ArmazemID, entregaData(_, DataEntrega, _, ArmazemID, _, _), ListaArmazens),
+	convertEntregasArmazens(ListaEntregas, ListaArmazens),
 	length(ListaArmazens, NumElem),
 	(retract(numEntregas(_)), !; true), asserta(numEntregas(NumElem)),
-	geraPopulacao(Pop),
+	geraPopulacao(Pop, ListaArmazens),
 	write('Pop: '),write(Pop),nl,
-	avaliacaoPopulacao(ListaNomeCamioes,Pop,PopAv),
+	avaliacaoPopulacao([NomeCamiao], Pop, PopAv),
 	write('PopAval: '),write(PopAv),nl,
+	ordenaPopulacao(PopAv,PopOrd),
+	numGeracoes(NG),
+	geraGeracao([NomeCamiao],0,NG,PopOrd,[PopOrd]).
+	
+initAlgGenMultiCamioes(ListaNomeCamioes, ListaEntregas, TempoRotaIdeal):-
+	recupDataEntrega(ListaEntregas, DataEntrega),
+	calcMassaTotTransportar(ListaEntregas, MassaTotTransportar),
+	calcCapTotCamioes(ListaNomeCamioes, CapTotCamioes),
+	MassaTotTransportar =< CapTotCamioes,
+	verificarNumCamioes(ListaNomeCamioes, MassaTotTransportar),
+	!,
+	(retract(tempoRotaIdeal(_)), !; true), asserta(tempoRotaIdeal(TempoRotaIdeal)),
+	(retract(dataEntrega(_)), !; true), asserta(dataEntrega(DataEntrega)),
+	get_time(InicioExec),
+	(retract(inicioExecucao(_)), !; true), asserta(inicioExecucao(InicioExec)),
+	convertEntregasArmazens(ListaEntregas, ListaArmazens),
+	length(ListaArmazens, NumElem),
+	(retract(numEntregas(_)), !; true), asserta(numEntregas(NumElem)),
+	geraPopulacao(Pop, ListaArmazens),
+	avaliacaoPopulacao(ListaNomeCamioes,Pop,PopAv),
 	ordenaPopulacao(PopAv,PopOrd),
 	numGeracoes(NG),
 	geraGeracao(ListaNomeCamioes,0,NG,PopOrd,[PopOrd]).
 
-calcMassaTotTransportar(DataEntrega, MassaTotTransportar):-
-	findall(MassaEntrega, entregaData(_, DataEntrega, MassaEntrega, _, _, _), ListaMassa),
-	calcMassaTotTransportarRec(ListaMassa, MassaTotTransportar).
+calcMassaTotTransportar([], 0).
 
-calcMassaTotTransportarRec([], 0):- !.
+calcMassaTotTransportar([Head|Tail], MassaTotTransportar):-
+	calcMassaTotTransportar(Tail, VarTemp),
+	entregaData(Head, _, Massa, _, _, _),
+	MassaTotTransportar is Massa + VarTemp.
 
-calcMassaTotTransportarRec([Head|Tail], MassaTotTransportar):-
-	calcMassaTotTransportarRec(Tail, VarTemp),
-	MassaTotTransportar is VarTemp + Head.
+recupDataEntrega([Head|Tail], DataEntrega):-
+	entregaData(Head, VarTemp, _, _, _, _),
+	recupDataEntregaRec(Tail, VarTemp, DataEntrega).
+
+recupDataEntregaRec([], DataEntrega, DataEntrega).
+
+recupDataEntregaRec([Head|Tail], DataAtual, DataEntrega):-
+	entregaData(Head, VarTemp, _, _, _, _),
+	VarTemp =:= DataAtual,
+	recupDataEntregaRec(Tail, DataAtual, DataEntrega).
 
 calcCapTotCamioes([], 0):- !.
 
@@ -57,11 +86,23 @@ calcCapTotCamioes([Head|Tail], CapTotCamioes):-
 	camiaoData(Head, _, CapCarga, _, _, _),
 	CapTotCamioes is CapCarga + VarTemp.
 
+verificarNumCamioes([], DifMassaCap):-
+	DifMassaCap =< 0.
+
+verificarNumCamioes([Head1|Tail1], DifMassaCap):-
+	camiaoData(Head1, _, CapCarga, _, _, _),
+	Diferenca is DifMassaCap - CapCarga,
+	verificarNumCamioes(Tail1, Diferenca).
+
+convertEntregasArmazens([], []).
+
+convertEntregasArmazens([Head|Tail1], [ArmazemID|Tail2]):-
+	entregaData(Head, _, _, ArmazemID, _, _),
+	convertEntregasArmazens(Tail1, Tail2).
+
 %geraPopulacao(-Lista)
-geraPopulacao(Pop):-
+geraPopulacao(Pop, ListaArmazens):-
 	dimensaoPop(TamPop),
-	dataEntrega(DataEntrega),
-	findall(ArmazemID, entregaData(_, DataEntrega, _, ArmazemID, _, _), ListaArmazens),
 	length(ListaArmazens, NumElem),
 	geraPopulacaoRec(TamPop,ListaArmazens,NumElem,Pop).
 
@@ -77,17 +118,16 @@ removeElemLista(Elem, [Head|Tail1], [Head|Tail2]):-
 
 %geraPopulacaoRec(+TamPop, +Lista, +NumElem, -Pop)
 geraPopulacaoRec(2,ListaArmazens,_,Lista):-
-	!,
 	bestfsDistancia(ListaArmazens, ListaTemp1),
 	dataEntrega(Data),
 	bestfsMassa(ListaArmazens, Data, ListaTemp2),
 	removeElemLista(ArmazemID,ListaTemp1, ListaTemp3),
 	removeElemLista(ArmazemID,ListaTemp2, ListaTemp4),
 	not(igual(ListaTemp3, ListaTemp4)),
+	!,
 	append([ListaTemp3], [ListaTemp4], Lista).
 
 geraPopulacaoRec(2, ListaArmazens, _, Lista):-
-	!,
 	bestfsDistancia(ListaArmazens, ListaTemp1),
 	dataEntrega(Data),
 	bestfsMassa(ListaArmazens, Data, ListaTemp2),
@@ -95,6 +135,7 @@ geraPopulacaoRec(2, ListaArmazens, _, Lista):-
 	removeElemLista(ArmazemID, ListaTemp1, ListaTemp3),
 	removeElemLista(ArmazemID, ListaTemp2, ListaTemp4),
 	igual(ListaTemp3, ListaTemp4),
+	!,
 	reverse(ListaTemp4, ListaTemp5),
 	append([ListaTemp4], [ListaTemp5], Lista).
 
@@ -212,9 +253,45 @@ btroca([X*VX,Y*VY|L1],[Y*VY|L2]):-
 
 btroca([X|L1],[X|L2]):-btroca(L1,L2).
 
+apresentarRotasGeracao(_, _, []):-
+	!.
+
+apresentarRotasGeracao(ListaCamioes, Cnt, [Head*_|Tail]):-
+	calcIntervaloAval(ListaCamioes, Head, 0, ListaIntervalos),
+	write('Individuo: '),
+	write(Cnt),
+	nl,
+	Cnt1 is Cnt + 1,
+	apresentarRotaCamiao(ListaCamioes, Head, ListaIntervalos),
+	nl,
+	apresentarRotasGeracao(ListaCamioes, Cnt1, Tail).
+
+apresentarRotaCamiao([], [], []).
+
+apresentarRotaCamiao([Head|Tail1], Rota, [(InicioIntervalo, FimIntervalo)|Tail2]):-
+	NumElem is FimIntervalo + 1 - InicioIntervalo,
+	length(ListaTemp, NumElem),
+	append(ListaTemp, RestoArmazensRota, Rota),
+	armazemPrincipalID(ArmazemID),
+	append([ArmazemID|ListaTemp], [ArmazemID], ListaArmazens),
+	write('Camiao: '),
+	write(Head),
+	nl,
+	write('Rota: '),
+	write(ListaArmazens),
+	nl,
+	apresentarRotaCamiao(Tail1, RestoArmazensRota, Tail2).
+
 %geraGeracao(+Cnt, +NumGera, +PopOrd)
-geraGeracao(_,G,G,Pop, _):-!,
-	write('Geracao '), write(G), write(':'), nl, write(Pop), nl.
+geraGeracao(ListaNomeCamioes,G,G,Pop, _):-!,
+	write('Geracao '),
+	write(G),
+	write(':'), 
+	nl, 
+	write(Pop), 
+	nl,
+	nl,
+	apresentarRotasGeracao(ListaNomeCamioes, 1, Pop).
 
 geraGeracao(ListaNomeCamioes,N,G,Pop,PrevGens):-
 	numGeracoesPrev(NumGensPrev),
@@ -232,10 +309,10 @@ geraGeracao(ListaNomeCamioes,N,G,Pop,PrevGens):-
 	selecaoInd(RestoPop, IndSelec, TamPop - NumInd),
 	append(ListaMelhoresInd, IndSelec, NovaGen),
 	ordenaPopulacao(NovaGen, NovaGenOrd),
-	N >= NumGensPrev,
+	N + 1 >= NumGensPrev,
 	!,
 	retira(1,PrevGens, _, ListaTemp),
-	append(ListaTemp, NovaGenOrd, NovaPrevLista),
+	append(ListaTemp, [NovaGenOrd], NovaPrevLista),
 	N1 is N+1,
 	write('Geracao '), write(N), write(':'), nl, write(Pop), nl,
 	geraGeracao(ListaNomeCamioes,N1,G,NovaGenOrd, NovaPrevLista).
@@ -256,9 +333,9 @@ geraGeracao(ListaNomeCamioes,N,G,Pop,PrevGens):-
 	selecaoInd(RestoPop, IndSelec, TamPop - NumInd),
 	append(ListaMelhoresInd, IndSelec, NovaGen),
 	ordenaPopulacao(NovaGen, NovaGenOrd),
-	N < NumGensPrev,
+	N + 1 < NumGensPrev,
 	!,
-	append(PrevGens, NovaGenOrd, NovaPrevGens),
+	append(PrevGens, [NovaGenOrd], NovaPrevGens),
 	N1 is N+1,
 	write('Geracao '), write(N), write(':'), nl, write(Pop), nl,
 	geraGeracao(ListaNomeCamioes,N1,G,NovaGenOrd, NovaPrevGens).
@@ -272,7 +349,7 @@ geraGeracao(_,N,_,Pop,PrevGens):-
 verificarCondTerm(Pop, PrevGens, N, NumGensPrev):-
 	verificarCondTempoIdeal(Pop);
 	verificarCondTpsExec;
-	N >= NumGensPrev,
+	N + 1 >= NumGensPrev,
 	verificarCondEstab(Pop, PrevGens).
 
 verificarCondTempoIdeal(Pop):-
@@ -371,7 +448,6 @@ preencheh([],[]).
 
 preencheh([_|R1],[h|R2]):-
 	preencheh(R1,R2).
-
 
 sublista(L1,I1,I2,L):-
 	I1 < I2,!,
