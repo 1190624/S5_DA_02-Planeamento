@@ -1,37 +1,67 @@
-%gera
-initAlgGen(NumGens, DimPop, Valor1, Valor2, TempoIdeal, TempoExec, NumGensPrev, DataEntrega):-
-	(retract(geracoes(_)), !; true), asserta(geracoes(NumGens)),
-	(retract(populacao(_)), !; true), asserta(populacao(DimPop)),
-	ProbCruz is Valor1 / 100,
-	(retract(prob_cruzamento(_)), !; true), asserta(prob_cruzamento(ProbCruz)),
-	ProbMuta is Valor2 / 100,
-	(retract(prob_mutacao(_)), !; true), asserta(prob_mutacao(ProbMuta)),
-	(retract(tempoIdeal(_)), !; true), asserta(tempoIdeal(TempoIdeal)),
-	(retract(maxTempoExec(_)), !; true), asserta(maxTempoExec(TempoExec)),
-	(retract(numGensPrev(_)), !; true), asserta(numGensPrev(NumGensPrev)),
+numGeracoes(5).
+
+dimensaoPop(10).
+
+probCruzamento(0.8).
+
+probMutacao(0.01).
+
+tempoMaxExec(300).
+
+numGeracoesPrev(3).
+
+configAlgGen(NumGera, DimPop, ValorCruzamento, ValorMutacao, TempoMaxExec, NumGeraPrev):-
+	(retract(numGeracoes(_)), !; true), asserta(numGeracoes(NumGera)),
+	(retract(dimensaoPop(_)), !; true), asserta(dimensaoPop(DimPop)),
+	ProbCruzamento is ValorCruzamento / 100,
+	(retract(probCruzamento(_)), !; true), asserta(probCruzamento(ProbCruzamento)),
+	ProbMutacao is ValorMutacao / 100,
+	(retract(probMutacao(_)), !; true), asserta(probMutacao(ProbMutacao)),
+	(retract(tempoMaxExec(_)), !; true), asserta(tempoMaxExec(TempoMaxExec)),
+	(retract(numGeracoesPrev(_)), !; true), asserta(numGeracoesPrev(NumGeraPrev)).
+
+initAlgGen(ListaNomeCamioes, DataEntrega, TempoRotaIdeal):-
+	calcMassaTotTransportar(DataEntrega, MassaTotTransportar),
+	calcCapTotCamioes(ListaNomeCamioes, CapTotCamioes),
+	MassaTotTransportar =< CapTotCamioes,
+	!,
+	(retract(tempoRotaIdeal(_)), !; true), asserta(tempoRotaIdeal(TempoRotaIdeal)),
 	(retract(dataEntrega(_)), !; true), asserta(dataEntrega(DataEntrega)),
-	get_time(InitTempoExec),
-	(retract(initTempoExec(_)), !; true), asserta(initTempoExec(InitTempoExec)),
-	dataEntrega(Data),
-	findall(ArmazemID, entregaData(_, Data, _, ArmazemID, _, _), ListaTemp),
-	armazemPrincipalID(ArmazemID),
-	removeElemLista(ArmazemID, ListaTemp, ListaArmazens),
+	get_time(InicioExec),
+	(retract(inicioExecucao(_)), !; true), asserta(inicioExecucao(InicioExec)),
+	findall(ArmazemID, entregaData(_, DataEntrega, _, ArmazemID, _, _), ListaArmazens),
 	length(ListaArmazens, NumElem),
 	(retract(numEntregas(_)), !; true), asserta(numEntregas(NumElem)),
 	geraPopulacao(Pop),
-	write('Pop='),write(Pop),nl,
-	avaliacaoPopulacao(Pop,PopAv),
-	write('PopAv='),write(PopAv),nl,
+	write('Pop: '),write(Pop),nl,
+	avaliacaoPopulacao(ListaNomeCamioes,Pop,PopAv),
+	write('PopAval: '),write(PopAv),nl,
 	ordenaPopulacao(PopAv,PopOrd),
-	geracoes(NG),
-	geraGeracao(0,NG,PopOrd,[PopOrd]).
+	numGeracoes(NG),
+	geraGeracao(ListaNomeCamioes,0,NG,PopOrd,[PopOrd]).
+
+calcMassaTotTransportar(DataEntrega, MassaTotTransportar):-
+	findall(MassaEntrega, entregaData(_, DataEntrega, MassaEntrega, _, _, _), ListaMassa),
+	calcMassaTotTransportarRec(ListaMassa, MassaTotTransportar).
+
+calcMassaTotTransportarRec([], 0):- !.
+
+calcMassaTotTransportarRec([Head|Tail], MassaTotTransportar):-
+	calcMassaTotTransportarRec(Tail, VarTemp),
+	MassaTotTransportar is VarTemp + Head.
+
+calcCapTotCamioes([], 0):- !.
+
+calcCapTotCamioes([Head|Tail], CapTotCamioes):-
+	calcCapTotCamioes(Tail, VarTemp),
+	camiaoData(Head, _, CapCarga, _, _, _),
+	CapTotCamioes is CapCarga + VarTemp.
 
 %geraPopulacao(-Lista)
 geraPopulacao(Pop):-
-	populacao(TamPop),
-	findall(ArmazemID, entregaData(_, _, _, ArmazemID, _, _), ListaTemp),
-	armazemPrincipalID(ArmazemID),
-	removeElemLista(ArmazemID, ListaTemp, ListaArmazens),
+	dimensaoPop(TamPop),
+	dataEntrega(DataEntrega),
+	findall(ArmazemID, entregaData(_, DataEntrega, _, ArmazemID, _, _), ListaArmazens),
 	length(ListaArmazens, NumElem),
 	geraPopulacaoRec(TamPop,ListaArmazens,NumElem,Pop).
 
@@ -62,8 +92,8 @@ geraPopulacaoRec(2, ListaArmazens, _, Lista):-
 	dataEntrega(Data),
 	bestfsMassa(ListaArmazens, Data, ListaTemp2),
 	armazemPrincipalID(ArmazemID),
-	removeElemLista(ArmazemID,ListaTemp1, ListaTemp3),
-	removeElemLista(ArmazemID,ListaTemp2, ListaTemp4),
+	removeElemLista(ArmazemID, ListaTemp1, ListaTemp3),
+	removeElemLista(ArmazemID, ListaTemp2, ListaTemp4),
 	igual(ListaTemp3, ListaTemp4),
 	reverse(ListaTemp4, ListaTemp5),
 	append([ListaTemp4], [ListaTemp5], Lista).
@@ -95,19 +125,72 @@ retira(N,[G1|Resto],G,[G1|Resto1]):-
 	retira(N1,Resto,G,Resto1).
 
 %avaliacaoPopulacao(+Pop, -AvalInd)
-avaliacaoPopulacao([],[]):-!.
+avaliacaoPopulacao(_, [], []):-!.
 
-avaliacaoPopulacao([Head|Tail1],[Head*Aval|Tail2]):-
-	calcTempoRota(Head, Aval),
-	avaliacaoPopulacao(Tail1,Tail2).
+avaliacaoPopulacao(ListaNomeCamioes,[Head|Tail1],[Head*Aval|Tail2]):-
+	calcIntervaloAval(ListaNomeCamioes, Head, 0, ListaIntervalos),
+	calcTempoRota(ListaNomeCamioes, Head, ListaIntervalos, ListaAval),
+	sort(0, @>=, ListaAval, ListaAvalOrd),
+	nth0(0, ListaAvalOrd, Aval),
+    !,
+	avaliacaoPopulacao(ListaNomeCamioes, Tail1, Tail2).
 
-%calcTempoRota(+Rota, -Tempo)
-calcTempoRota([_|[]], 0):-!.
+calcIntervaloAval([], [], _, []):- !.
 
-calcTempoRota([Head1, Head2|Tail], Tempo):-
-	calcTempoRota([Head2|Tail], VarTemp),
-	distancia(Head1, Head2, TempoMax),
-	Tempo is VarTemp + TempoMax.
+calcIntervaloAval([Head1|Tail1], Rota, InicioIntervalo, [(InicioIntervalo, FimIntervalo)|Tail2]):-
+	calcIntervaloAvalCamiao(Head1, Rota, 0, InicioIntervalo, FimIntervalo),
+    NumElem is FimIntervalo + 1 - InicioIntervalo,
+	length(ListaTemp1, NumElem),
+	append(ListaTemp1, RestoArmazensRota, Rota),
+    NovoInicioIntervalo is FimIntervalo + 1,
+	calcIntervaloAval(Tail1, RestoArmazensRota, NovoInicioIntervalo, Tail2).
+
+calcIntervaloAvalCamiao(_, [], _, CntPos, FimIntervalo):-
+	!,
+    FimIntervalo is CntPos - 1.
+
+calcIntervaloAvalCamiao(NomeCamiao, [Head|_], MassaCargaAtual, 0, PosLimite):-
+	dataEntrega(DataEntrega),
+	entregaData(_, DataEntrega, Massa, Head, _, _),
+	camiaoData(NomeCamiao, _, CapCarga, _, _, _),
+	Massa + MassaCargaAtual > CapCarga,
+    !,
+	PosLimite is 0.
+
+calcIntervaloAvalCamiao(NomeCamiao, [Head|_], MassaCargaAtual, CntPos, PosLimite):-
+	dataEntrega(DataEntrega),
+	entregaData(_, DataEntrega, Massa, Head, _, _),
+	camiaoData(NomeCamiao, _, CapCarga, _, _, _),
+	Massa + MassaCargaAtual > CapCarga,
+    !,
+	PosLimite is CntPos - 1.
+
+calcIntervaloAvalCamiao(NomeCamiao, [Head|Tail], MassaCargaAtual, CntPos, PosLimite):-
+	dataEntrega(DataEntrega),
+	entregaData(_, DataEntrega, Massa, Head, _, _),
+	camiaoData(NomeCamiao, _, CapCarga, _, _, _),
+	Massa + MassaCargaAtual =< CapCarga,
+	CntPos1 is CntPos + 1,
+	calcIntervaloAvalCamiao(NomeCamiao, Tail, Massa + MassaCargaAtual, CntPos1, PosLimite).
+
+calcTempoRota([], [], [], []).
+
+calcTempoRota([Head1|Tail1], Rota, [(InicioIntervalo, FimIntervalo)|Tail2], [Head3|Tail3]):-
+	NumElem is FimIntervalo + 1 - InicioIntervalo,
+	length(ListaTemp, NumElem),
+	append(ListaTemp, RestoArmazensRota, Rota),
+	armazemPrincipalID(ArmazemID),
+	append([ArmazemID|ListaTemp], [ArmazemID], ListaArmazens),
+	calcTempoRotaCamiao(Head1, ListaArmazens, Head3),
+	calcTempoRota(Tail1, RestoArmazensRota, Tail2, Tail3).
+
+calcTempoRotaCamiao(_, [_|[]], 0):-
+    !.
+
+calcTempoRotaCamiao(NomeCamiao, [Head1, Head2|Tail], Aval):-
+	camiaoTrajetoData(NomeCamiao, Head1, Head2, TempoTrajeto, _, TempoAdd),
+	calcTempoRotaCamiao(NomeCamiao, [Head2|Tail], VarTemp),
+	Aval is TempoTrajeto + TempoAdd + VarTemp.
 
 %ordenaPopulacao(+PopAval, -PopAvalOrd)
 ordenaPopulacao(PopAval,PopAvalOrd):-
@@ -130,20 +213,20 @@ btroca([X*VX,Y*VY|L1],[Y*VY|L2]):-
 btroca([X|L1],[X|L2]):-btroca(L1,L2).
 
 %geraGeracao(+Cnt, +NumGera, +PopOrd)
-geraGeracao(G,G,Pop, _):-!,
+geraGeracao(_,G,G,Pop, _):-!,
 	write('Geracao '), write(G), write(':'), nl, write(Pop), nl.
 
-geraGeracao(N,G,Pop,PrevGens):-
-	numGensPrev(NumGensPrev),
+geraGeracao(ListaNomeCamioes,N,G,Pop,PrevGens):-
+	numGeracoesPrev(NumGensPrev),
 	not(verificarCondTerm(Pop, PrevGens, N, NumGensPrev)),
 	random_permutation(Pop, PopPerm),
 	cruzamento(PopPerm,PopCruz),
 	mutacao(PopCruz,GenPop),
 	removeElemDuplicados(GenPop, Pop, GenPopFinal),
-	avaliacaoPopulacao(GenPopFinal,GenPopAval),
+	avaliacaoPopulacao(ListaNomeCamioes,GenPopFinal,GenPopAval),
 	append(GenPopAval, Pop, PopFinal),
 	ordenaPopulacao(PopFinal,PopFinalOrd),
-	populacao(TamPop),
+	dimensaoPop(TamPop),
 	NumInd is (TamPop * 30) // 100,
 	melhoresIndividuos(0,NumInd,PopFinalOrd,ListaMelhoresInd,RestoPop),
 	selecaoInd(RestoPop, IndSelec, TamPop - NumInd),
@@ -155,19 +238,19 @@ geraGeracao(N,G,Pop,PrevGens):-
 	append(ListaTemp, NovaGenOrd, NovaPrevLista),
 	N1 is N+1,
 	write('Geracao '), write(N), write(':'), nl, write(Pop), nl,
-	geraGeracao(N1,G,NovaGenOrd, NovaPrevLista).
+	geraGeracao(ListaNomeCamioes,N1,G,NovaGenOrd, NovaPrevLista).
 
-geraGeracao(N,G,Pop,PrevGens):-
-	numGensPrev(NumGensPrev),
+geraGeracao(ListaNomeCamioes,N,G,Pop,PrevGens):-
+	numGeracoesPrev(NumGensPrev),
 	not(verificarCondTerm(Pop, PrevGens, N, NumGensPrev)),
 	random_permutation(Pop, PopPerm),
 	cruzamento(PopPerm,PopCruz),
 	mutacao(PopCruz,GenPop),
 	removeElemDuplicados(GenPop, Pop, GenPopFinal),
-	avaliacaoPopulacao(GenPopFinal,GenPopAval),
+	avaliacaoPopulacao(ListaNomeCamioes,GenPopFinal,GenPopAval),
 	append(GenPopAval, Pop, PopFinal),
 	ordenaPopulacao(PopFinal,PopFinalOrd),
-	populacao(TamPop),
+	dimensaoPop(TamPop),
 	NumInd is (TamPop * 30) // 100,
 	melhoresIndividuos(0,NumInd,PopFinalOrd,ListaMelhoresInd,RestoPop),
 	selecaoInd(RestoPop, IndSelec, TamPop - NumInd),
@@ -178,11 +261,11 @@ geraGeracao(N,G,Pop,PrevGens):-
 	append(PrevGens, NovaGenOrd, NovaPrevGens),
 	N1 is N+1,
 	write('Geracao '), write(N), write(':'), nl, write(Pop), nl,
-	geraGeracao(N1,G,NovaGenOrd, NovaPrevGens).
+	geraGeracao(ListaNomeCamioes,N1,G,NovaGenOrd, NovaPrevGens).
 
-geraGeracao(N,_,Pop,PrevGens):-
+geraGeracao(_,N,_,Pop,PrevGens):-
 	!,
-	numGensPrev(NumGensPrev),
+	numGeracoesPrev(NumGensPrev),
 	verificarCondTerm(Pop, PrevGens, N, NumGensPrev).
 
 %verificarCondTerm(+Pop)
@@ -193,13 +276,13 @@ verificarCondTerm(Pop, PrevGens, N, NumGensPrev):-
 	verificarCondEstab(Pop, PrevGens).
 
 verificarCondTempoIdeal(Pop):-
-	tempoIdeal(TempoIdeal),
+	tempoRotaIdeal(TempoIdeal),
 	indTempoIdeal(Pop, TempoIdeal).
 	
 verificarCondTpsExec:-
 	get_time(TpsExecAtual),
-	initTempoExec(InitTempoExec),
-	maxTempoExec(MaxTempoExec),
+	inicioExecucao(InitTempoExec),
+	tempoMaxExec(MaxTempoExec),
 	InitTempoExec - TpsExecAtual >= MaxTempoExec.
 
 verificarCondEstab(Pop, PrevGens):-
@@ -276,7 +359,7 @@ cruzamento([],[]).
 cruzamento([Ind*_],[Ind]).
 cruzamento([Ind1*_,Ind2*_|Resto],[NInd1,NInd2|Resto1]):-
 	gerar_pontos_cruzamento(P1,P2),
-	prob_cruzamento(Pcruz),random(0.0,1.0,Pc),
+	probCruzamento(Pcruz),random(0.0,1.0,Pc),
 	((Pc =< Pcruz,!,
         cruzar(Ind1,Ind2,P1,P2,NInd1),
 	  cruzar(Ind2,Ind1,P1,P2,NInd2))
@@ -365,7 +448,7 @@ eliminah([X|R1],[X|R2]):-
 
 mutacao([],[]).
 mutacao([Ind|Rest],[NInd|Rest1]):-
-	prob_mutacao(Pmut),
+	probMutacao(Pmut),
 	random(0.0,1.0,Pm),
 	((Pm < Pmut,!,mutacao1(Ind,NInd));NInd = Ind),
 	mutacao(Rest,Rest1).
