@@ -1,15 +1,3 @@
-numGeracoes(5).
-
-dimensaoPop(4).
-
-probCruzamento(0.8).
-
-probMutacao(0.01).
-
-tempoMaxExec(300).
-
-numGeracoesPrev(3).
-
 configAlgGen(NumGera, DimPop, ValorCruzamento, ValorMutacao, TempoMaxExec, NumGeraPrev):-
 	(retract(numGeracoes(_)), !; true), asserta(numGeracoes(NumGera)),
 	(retract(dimensaoPop(_)), !; true), asserta(dimensaoPop(DimPop)),
@@ -90,6 +78,7 @@ verificarNumCamioes([], DifMassaCap):-
 	DifMassaCap =< 0.
 
 verificarNumCamioes([Head1|Tail1], DifMassaCap):-
+	DifMassaCap > 0,
 	camiaoData(Head1, _, CapCarga, _, _, _),
 	Diferenca is DifMassaCap - CapCarga,
 	verificarNumCamioes(Tail1, Diferenca).
