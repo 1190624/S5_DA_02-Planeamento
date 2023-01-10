@@ -19,5 +19,7 @@ from . import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('melhorRota/', views.getMelhorRota)
+    path('melhorRota/', views.getMelhorRota),
+    path('heuristicas/', views.getHeuristicas),
+    path('heuristicas/armazens/', views.getArmazens)
 ]

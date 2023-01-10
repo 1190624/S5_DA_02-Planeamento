@@ -4,6 +4,20 @@ findall(Armazem,
 ListaArmazens), 
 bestfsDistancia(ListaArmazens, ListaId), convertIdParaNome(ListaId, Final).
 
+resultadosDaMassa(Data, Final):- 
+findall(Armazem, 
+(entregaData(_,Data,_, Armazem,_,_), Armazem \== 5),
+ListaArmazens), 
+bestfsMassa(ListaArmazens, Data, ListaId), convertIdParaNome(ListaId, Final).
+
+
+resultadosCombinados(Data, Final):- 
+findall(Armazem, 
+(entregaData(_,Data,_, Armazem,_,_), Armazem \== 5),
+ListaArmazens), 
+bestfsMassaDistancia(ListaArmazens, Data, ListaId), convertIdParaNome(ListaId, Final).
+
+
 convertIdParaNome(ListaId, ListaNome):- converter(ListaId, [], ListaNome).
 
 converter([],Lista, ListaNome):- !,reverse(Lista, ListaNome).
