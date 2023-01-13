@@ -8,6 +8,7 @@ configAlgGen(NumGera, DimPop, ValorCruzamento, ValorMutacao, TempoMaxExec, NumGe
 	(retract(tempoMaxExec(_)), !; true), asserta(tempoMaxExec(TempoMaxExec)),
 	(retract(numGeracoesPrev(_)), !; true), asserta(numGeracoesPrev(NumGeraPrev)).
 
+%US1
 initAlgGenDef(NomeCamiao, ListaEntregas, TempoRotaIdeal):-
 	recupDataEntrega(ListaEntregas, DataEntrega),
 	calcMassaTotTransportar(ListaEntregas, MassaTotTransportar),
@@ -29,6 +30,7 @@ initAlgGenDef(NomeCamiao, ListaEntregas, TempoRotaIdeal):-
 	numGeracoes(NG),
 	geraGeracao([NomeCamiao],0,NG,PopOrd,[PopOrd]).
 	
+%US2	
 initAlgGenMultiCamioes(ListaNomeCamioes, ListaEntregas, TempoRotaIdeal):-
 	recupDataEntrega(ListaEntregas, DataEntrega),
 	calcMassaTotTransportar(ListaEntregas, MassaTotTransportar),
@@ -56,6 +58,7 @@ calcMassaTotTransportar([Head|Tail], MassaTotTransportar):-
 	entregaData(Head, _, Massa, _, _, _),
 	MassaTotTransportar is Massa + VarTemp.
 
+%recupDataEntrega(+ListaEntregas, -DataEntrega)
 recupDataEntrega([Head|Tail], DataEntrega):-
 	entregaData(Head, VarTemp, _, _, _, _),
 	recupDataEntregaRec(Tail, VarTemp, DataEntrega).
@@ -110,6 +113,7 @@ geraPopulacaoRec(2,ListaArmazens,_,Lista):-
 	bestfsDistancia(ListaArmazens, ListaTemp1),
 	dataEntrega(Data),
 	bestfsMassa(ListaArmazens, Data, ListaTemp2),
+	armazemPrincipalID(ArmazemID),
 	removeElemLista(ArmazemID,ListaTemp1, ListaTemp3),
 	removeElemLista(ArmazemID,ListaTemp2, ListaTemp4),
 	not(igual(ListaTemp3, ListaTemp4)),
@@ -126,7 +130,7 @@ geraPopulacaoRec(2, ListaArmazens, _, Lista):-
 	igual(ListaTemp3, ListaTemp4),
 	!,
 	reverse(ListaTemp4, ListaTemp5),
-	append([ListaTemp4], [ListaTemp5], Lista).
+	append([ListaTemp3], [ListaTemp5], Lista).
 
 geraPopulacaoRec(TamPop,ListaArmazens,NumElem,[Head|Tail]):-
 	TamPop1 is TamPop-1,
