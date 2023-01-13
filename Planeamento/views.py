@@ -16,14 +16,8 @@ def getMelhorRota(request):
 
 
 def getHeuristicas(request):
-    #heuristica: distancia, massa, combinada
-    #listaArmazens
-    #data
     requestData = json.loads(request.body)
-    #listArmazensID = []
 
-    #for armazemID in requestData["ListaArmazensID"]:
-     #   listArmazensID.append(armazemID["id"])
 
     return HttpResponse(heuristicas(requestData["Heuristica"], requestData["Data"]))
 

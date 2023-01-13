@@ -90,7 +90,7 @@ bestfs3([],_,Cam, CaminhoFinal):- !,
 bestfs3(ListaArmazens, Data, Cam, CaminhoFinal):-
     Cam = [ArmazemAtual|_],
     findall((Relacao,[ArmazemProximo| Cam]), 
-    (armazemDistData(ArmazemAtual,ArmazemProximo,Distancia), member(ArmazemProximo, ListaArmazens), entregaData(_,Data,Massa,ArmazemProximo,_,_), armazemData(_,ArmazemProximo), Relacao is Massa/Distancia),
+    (armazenDistData(ArmazemAtual,ArmazemProximo,Distancia), member(ArmazemProximo, ListaArmazens), entregaData(_,Data,Massa,ArmazemProximo,_,_), armazemData(_,ArmazemProximo), Relacao is Massa/Distancia),
     Novos),
 
     sort(0, @>=, Novos, NovosOrd),
